@@ -16,7 +16,8 @@ router.post('/webhook', express.raw({ type: 'application/json' }), handleStripeW
 
 // Protected routes
 router.post('/create-checkout-session', protectRoute, createCheckoutSession);
-router.post('/checkout-success', protectRoute, checkoutSuccess);
+// Allow checkout success to be processed without the user's active session — Stripe redirects back with session_id
+router.post('/checkout-success', checkoutSuccess);
 router.post('/validate-coupon', protectRoute, validateCoupon);
 router.get('/orders', protectRoute, getOrderHistory);
 router.get('/orders/:orderId', protectRoute, getOrderDetails);

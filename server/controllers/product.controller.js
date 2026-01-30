@@ -98,13 +98,20 @@ export const getRecommendedProducts = async (req, res) => {
 // Create product (with Cloudinary upload)
 export const createProduct = async (req, res) => {
   try {
-    const { name, description, price, category, stock, isFeatured } = req.body;
+    console.log('Create product - received body:', req.body);
+    console.log('Create product - received file:', req.file ? {
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size
+    } : 'No file');
+
+    const { name, description, price, category, stock } = req.body;
 
     // Validation
     if (!name || !description || !price || !category || stock === undefined) {
       return res.status(400).json({ 
         success: false,
-        message: 'All fields are required' 
+        message: 'All fields are required (name, description, price, category, stock)' 
       });
     }
 
@@ -115,15 +122,8 @@ export const createProduct = async (req, res) => {
       });
     }
 
-    console.log('Create product - received file:', {
-      originalname: req.file.originalname,
-      mimetype: req.file.mimetype,
-      size: req.file.size
-    });
-
     // Upload image to Cloudinary
     const imageData = await uploadToCloudinary(req.file, 'products');
-
     console.log('Create product - upload result:', imageData);
 
     // Create product
@@ -133,7 +133,6 @@ export const createProduct = async (req, res) => {
       price: Number(price),
       category,
       stock: Number(stock),
-      isFeatured: !!JSON.parse(typeof isFeatured === 'string' ? isFeatured : JSON.stringify(isFeatured)),
       image: {
         url: imageData.url,
         publicId: imageData.publicId
@@ -141,15 +140,7 @@ export const createProduct = async (req, res) => {
       createdBy: req.user._id
     });
 
-    // If product is featured, update the featured products cache
-    if (product.isFeatured) {
-      try {
-        await updateFeaturedProductsCache(Product);
-        console.log('Featured products cache updated after product creation');
-      } catch (err) {
-        console.error('Failed to update featured products cache after creation:', err);
-      }
-    }
+    console.log('Product created successfully:', product._id);
 
     res.status(201).json({
       success: true,

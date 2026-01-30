@@ -1,7 +1,7 @@
-import Stripe from 'stripe';
 import Order from '../models/order.model.js';
 import Coupon from '../models/coupon.model.js';
 import User from '../models/user.model.js';
+import Product from '../models/product.model.js';
 import { stripe, createStripeCheckoutSession, retrieveStripeSession } from '../lib/stripe.js';
 
 export const createCheckoutSession = async (req, res) => {
@@ -9,89 +9,64 @@ export const createCheckoutSession = async (req, res) => {
     const { products, couponCode } = req.body;
 
     if (!Array.isArray(products) || products.length === 0) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'Invalid products array' 
-      });
+      return res.status(400).json({ success: false, message: 'Invalid products array' });
     }
 
     let totalAmount = 0;
 
-    // Validate products and check stock
+    // Validate stock
     for (const item of products) {
-      const product = await Product.findById(item._id);
-      
-      if (!product) {
-        return res.status(404).json({ 
-          success: false,
-          message: `Product not found: ${item.name}` 
-        });
+      const dbProduct = await Product.findById(item._id);
+      if (!dbProduct) {
+        return res.status(404).json({ success: false, message: `Product not found` });
       }
-
-      if (product.stock < item.quantity) {
-        return res.status(400).json({ 
-          success: false,
-          message: `Not enough stock for ${product.name}. Available: ${product.stock}` 
-        });
+      if (dbProduct.stock < item.quantity) {
+        return res.status(400).json({ success: false, message: `Not enough stock for ${dbProduct.name}` });
       }
     }
 
-    // Create line items
-    const lineItems = products.map(product => {
-      const amount = Math.round(product.price * 100);
-      totalAmount += amount * product.quantity;
+    // Line items for Stripe
+    const lineItems = products.map((product) => {
+      const unitAmount = Math.round(product.price * 100);
+      totalAmount += unitAmount * product.quantity;
+
+      const productData = { name: product.name };
+      if (product.description) productData.description = product.description;
+      if (product.image?.url) productData.images = [product.image.url];
 
       return {
         price_data: {
           currency: 'usd',
-          product_data: {
-            name: product.name,
-            description: product.description || '',
-            images: [product.image.url]
-          },
-          unit_amount: amount
+          product_data: productData,
+          unit_amount: unitAmount,
         },
-        quantity: product.quantity || 1
+        quantity: product.quantity || 1,
       };
     });
 
-    // Handle coupon
-    let coupon = null;
+    // Coupon
     let discount = 0;
-
     if (couponCode) {
-      coupon = await Coupon.findOne({ code: couponCode.toUpperCase() });
-
+      const coupon = await Coupon.findOne({ code: couponCode.toUpperCase() });
       if (!coupon || !coupon.isValid()) {
-        return res.status(400).json({ 
-          success: false,
-          message: 'Invalid or expired coupon' 
-        });
+        return res.status(400).json({ success: false, message: 'Invalid or expired coupon' });
       }
 
       if (coupon.usedBy.includes(req.user._id)) {
-        return res.status(400).json({ 
-          success: false,
-          message: 'You have already used this coupon' 
-        });
+        return res.status(400).json({ success: false, message: 'Coupon already used' });
       }
 
       discount = Math.round((totalAmount * coupon.discountPercentage) / 100);
       totalAmount -= discount;
     }
 
-    // Create Stripe session
     const session = await createStripeCheckoutSession({
       lineItems,
       userId: req.user._id,
       couponCode: couponCode || '',
-      products: products.map(p => ({
-        id: p._id,
-        quantity: p.quantity,
-        price: p.price
-      })),
+      products: products.map((p) => ({ id: p._id, quantity: p.quantity, price: p.price })),
       successUrl: `${process.env.CLIENT_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancelUrl: `${process.env.CLIENT_URL}/payment-failed`
+      cancelUrl: `${process.env.CLIENT_URL}/payment-failed`,
     });
 
     res.json({
@@ -99,105 +74,71 @@ export const createCheckoutSession = async (req, res) => {
       sessionId: session.id,
       url: session.url,
       totalAmount: totalAmount / 100,
-      discount: discount / 100
+      discount: discount / 100,
     });
   } catch (error) {
     console.error('Create checkout session error:', error);
-    res.status(500).json({ 
-      success: false,
-      message: error.message || 'Failed to create checkout session' 
-    });
+    res.status(500).json({ success: false, message: 'Failed to create checkout session' });
   }
 };
 
 export const checkoutSuccess = async (req, res) => {
   try {
     const { sessionId } = req.body;
+    console.log('checkoutSuccess called. sessionId:', sessionId, 'auth user:', !!req.user);
 
     if (!sessionId) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'Session ID is required' 
-      });
+      return res.status(400).json({ success: false, message: 'Session ID is required' });
     }
 
     const session = await retrieveStripeSession(sessionId);
+    console.log('Stripe session payment_status:', session.payment_status);
 
-    if (session.payment_status === 'paid') {
-      // Check if order already exists
-      const existingOrder = await Order.findOne({ stripeSessionId: sessionId });
-      
-      if (existingOrder) {
-        return res.json({ 
-          success: true, 
-          orderId: existingOrder._id,
-          message: 'Order already processed' 
-        });
-      }
+    if (session.payment_status !== 'paid') {
+      return res.status(400).json({ success: false, message: 'Payment not completed' });
+    }
 
-      const products = JSON.parse(session.metadata.products);
-      const userId = session.metadata.userId;
-      const couponCode = session.metadata.couponCode;
+    let order = await Order.findOne({ stripeSessionId: sessionId });
+    if (order) {
+      return res.json({ success: true, orderId: order._id, message: 'Order already processed' });
+    }
 
-      // Create order
-      const order = new Order({
-        user: userId,
-        products: products.map(p => ({
-          product: p.id,
-          quantity: p.quantity,
-          price: p.price
-        })),
-        totalAmount: session.amount_total / 100,
-        stripeSessionId: sessionId,
-        paymentStatus: 'paid'
-      });
+    const products = JSON.parse(session.metadata.products);
+    const userId = session.metadata.userId;
+    const couponCode = session.metadata.couponCode;
 
-      // Add coupon if used
-      if (couponCode) {
-        const coupon = await Coupon.findOne({ code: couponCode.toUpperCase() });
-        if (coupon) {
-          order.couponUsed = {
-            code: coupon.code,
-            discount: coupon.discountPercentage
-          };
-          
-          if (!coupon.usedBy.includes(userId)) {
-            coupon.usedBy.push(userId);
-            coupon.currentUses += 1;
-            await coupon.save();
-          }
+    order = new Order({
+      user: userId,
+      products: products.map((p) => ({ product: p.id, quantity: p.quantity, price: p.price })),
+      totalAmount: session.amount_total / 100,
+      stripeSessionId: sessionId,
+      paymentStatus: 'paid',
+    });
+
+    if (couponCode) {
+      const coupon = await Coupon.findOne({ code: couponCode.toUpperCase() });
+      if (coupon) {
+        order.couponUsed = { code: coupon.code, discount: coupon.discountPercentage };
+        if (!coupon.usedBy.includes(userId)) {
+          coupon.usedBy.push(userId);
+          coupon.currentUses += 1;
+          await coupon.save();
         }
       }
-
-      // Update product stock
-      for (const item of products) {
-        await Product.findByIdAndUpdate(item.id, {
-          $inc: { stock: -item.quantity }
-        });
-      }
-
-      await order.save();
-
-      // Clear user's cart
-      await User.findByIdAndUpdate(userId, { cartItems: [] });
-
-      res.json({ 
-        success: true, 
-        orderId: order._id,
-        message: 'Payment successful and order created' 
-      });
-    } else {
-      res.status(400).json({ 
-        success: false, 
-        message: 'Payment not completed' 
-      });
     }
+
+    // Update stock
+    for (const item of products) {
+      await Product.findByIdAndUpdate(item.id, { $inc: { stock: -item.quantity } });
+    }
+
+    await order.save();
+    await User.findByIdAndUpdate(userId, { cartItems: [] });
+
+    res.json({ success: true, orderId: order._id, message: 'Payment successful and order created' });
   } catch (error) {
     console.error('Checkout success error:', error);
-    res.status(500).json({ 
-      success: false,
-      message: error.message || 'Failed to process checkout' 
-    });
+    res.status(500).json({ success: false, message: error.message || 'Failed to process checkout' });
   }
 };
 
@@ -236,9 +177,9 @@ export const validateCoupon = async (req, res) => {
     });
   } catch (error) {
     console.error('Validate coupon error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: 'Failed to validate coupon' 
+      message: 'Failed to validate coupon'
     });
   }
 };
@@ -295,7 +236,7 @@ export const handleStripeWebhook = async (req, res) => {
 async function handleCheckoutSessionCompleted(session) {
   try {
     const existingOrder = await Order.findOne({ stripeSessionId: session.id });
-    
+
     if (existingOrder) {
       console.log('Order already exists:', existingOrder._id);
       return;
@@ -353,7 +294,7 @@ async function handleCheckoutSessionCompleted(session) {
 async function handleRefund(charge) {
   try {
     const order = await Order.findOne({ stripeSessionId: charge.payment_intent });
-    
+
     if (order) {
       order.paymentStatus = 'refunded';
       
@@ -385,9 +326,9 @@ export const getOrderHistory = async (req, res) => {
     });
   } catch (error) {
     console.error('Get order history error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: 'Failed to fetch order history' 
+      message: 'Failed to fetch order history'
     });
   }
 };
@@ -418,9 +359,9 @@ export const getOrderDetails = async (req, res) => {
     });
   } catch (error) {
     console.error('Get order details error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: 'Failed to fetch order details' 
+      message: 'Failed to fetch order details'
     });
   }
 };
