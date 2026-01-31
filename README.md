@@ -1,4 +1,4 @@
-# E-NexStore — ShopHub (E-commerce Boilerplate)
+# E-NexStore — (E-commerce Boilerplate)
 
 **Repository:** https://github.com/FaizanAhmeddd27/E-NexStore
 
