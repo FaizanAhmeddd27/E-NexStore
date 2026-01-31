@@ -33,17 +33,14 @@ function App() {
     dispatch(getProfile())
   }, [dispatch])
 
-  // Debug: log runtime env and test server health to verify VITE_API_URL in production
+  // Debug: use the axios instance (it computes a safe runtime baseURL)
   useEffect(() => {
-    const raw = import.meta.env.VITE_API_URL ?? window.location.origin;
-    const API_BASE = raw.replace(/\/$/, '') + (raw.endsWith('/api') ? '' : '/api');
-    console.log('VITE_API_URL (runtime):', raw);
-    console.log('Computed API_BASE:', API_BASE);
-
-    fetch(API_BASE + '/health')
-      .then((res) => res.json())
-      .then((data) => console.log('health response:', data))
-      .catch((err) => console.error('health fetch failed:', err));
+    import('./api/axios').then(({ default: axiosInstance }) => {
+      console.log('axios baseURL (runtime):', axiosInstance.defaults.baseURL);
+      axiosInstance.get('/health')
+        .then((res) => console.log('health response:', res.data))
+        .catch((err) => console.error('health fetch failed:', err));
+    }).catch((err) => console.error('Failed to load axios for health check:', err));
   }, []);
 
   useEffect(() => {
