@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+// Ensure the API base URL always points to the server's /api namespace
+const raw = import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
+const API_BASE = raw.replace(/\/$/, '') + (raw.endsWith('/api') ? '' : '/api');
+
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: API_BASE,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',

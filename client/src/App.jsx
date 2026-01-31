@@ -33,6 +33,19 @@ function App() {
     dispatch(getProfile())
   }, [dispatch])
 
+  // Debug: log runtime env and test server health to verify VITE_API_URL in production
+  useEffect(() => {
+    const raw = import.meta.env.VITE_API_URL ?? window.location.origin;
+    const API_BASE = raw.replace(/\/$/, '') + (raw.endsWith('/api') ? '' : '/api');
+    console.log('VITE_API_URL (runtime):', raw);
+    console.log('Computed API_BASE:', API_BASE);
+
+    fetch(API_BASE + '/health')
+      .then((res) => res.json())
+      .then((data) => console.log('health response:', data))
+      .catch((err) => console.error('health fetch failed:', err));
+  }, []);
+
   useEffect(() => {
     if (isAuthenticated) {
       dispatch(getCartItems())
