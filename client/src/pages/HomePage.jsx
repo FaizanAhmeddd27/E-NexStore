@@ -4,10 +4,19 @@ import CategoryCard from '../components/home/CategoryCard'
 import FeaturedProducts from '../components/home/FeaturedProducts'
 
 const categories = [
-  { name: 'Jeans', slug: 'jeans' },
-  { name: 'T-Shirts', slug: 't-shirts' },
-  { name: 'Shoes', slug: 'shoes' },
-]
+  { name: "Jeans", slug: "jeans" },
+  { name: "T-Shirts", slug: "t-shirts" },
+  { name: "Shoes", slug: "shoes" },
+  { name: "Hoodies", slug: "hoodies" },
+  { name: "Jackets", slug: "jackets" },
+  { name: "Shirts", slug: "shirts" },
+  { name: "Pants", slug: "pants" },
+  { name: "Shorts", slug: "shorts" },
+  { name: "Accessories", slug: "accessories" },
+  { name: "Bags", slug: "bags" },
+  { name: "Caps", slug: "caps" },
+  { name: "Watches", slug: "watches" },
+];
 
 const HomePage = () => {
   return (

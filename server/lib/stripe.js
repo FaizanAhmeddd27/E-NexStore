@@ -7,7 +7,6 @@ if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY is not set in environment variables');
 }
 
-// Read raw API version from env and sanitize (accepts '2026-01-28.clover' etc.)
 const rawStripeApiVersion = process.env.STRIPE_API_VERSION || '';
 const match = rawStripeApiVersion.match(/^(\d{4}-\d{2}-\d{2})/);
 const sanitizedApiVersion = match ? match[1] : undefined;
@@ -43,10 +42,9 @@ export const createStripeCheckoutSession = async ({
       billing_address_collection: 'required',
     });
 
-    console.log('✅ Stripe checkout session created:', session.id);
     return session;
   } catch (error) {
-    console.error('❌ Stripe session creation error:', error);
+    console.error(' Stripe session creation error:', error);
     throw error;
   }
 };
@@ -54,7 +52,6 @@ export const createStripeCheckoutSession = async ({
 export const retrieveStripeSession = async (sessionId) => {
   try {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
-    console.log('✅ Stripe session retrieved:', sessionId);
     return session;
   } catch (error) {
     console.error('❌ Stripe session retrieval error:', error);

@@ -1,18 +1,26 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ShoppingCart, LogOut, LayoutDashboard, User, Home, Menu, X } from 'lucide-react'
+import { ShoppingCart, LogOut, LayoutDashboard, User, Home, Menu, X, List } from 'lucide-react'
 import { logout } from '../../redux/thunks/authThunks'
 import { useState, useEffect } from 'react'
 import { calculateTotals } from '../../redux/slices/cartSlice'
+import { getOrderHistory } from '../../redux/thunks/orderThunks'
 
 const Navbar = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const { user, isAuthenticated } = useSelector((state) => state.auth)
   const { cartItems } = useSelector((state) => state.cart)
+  const { count: orderCount } = useSelector((state) => state.orders)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(getOrderHistory())
+    }
+  }, [isAuthenticated, dispatch])
 
   const handleLogout = () => {
     dispatch(logout())
@@ -53,7 +61,7 @@ const Navbar = () => {
             >
               <ShoppingCart className="text-white" size={24} />
             </motion.div>
-            <span className="text-2xl font-bold gradient-text">ShopHub</span>
+            <span className="text-2xl font-bold gradient-text">NexStore</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -62,6 +70,9 @@ const Navbar = () => {
             
             {isAuthenticated && (
               <>
+                {orderCount > 0 && (
+                  <NavLink to="/orders" icon={<List size={20} />} text="My Orders" />
+                )}
                 <NavLink to="/cart" icon={<ShoppingCart size={20} />} text="Cart" badge={cartCount} />
                 
                 {user?.role === 'admin' && (
@@ -137,7 +148,10 @@ const Navbar = () => {
                 
                 {isAuthenticated ? (
                   <>
-                    <MobileNavLink to="/cart" icon={<ShoppingCart size={20} />} text="Cart" badge={cartCount} onClick={() => setMobileMenuOpen(false)} />
+                    {orderCount > 0 && (
+                  <MobileNavLink to="/orders" icon={<List size={20} />} text="My Orders" onClick={() => setMobileMenuOpen(false)} />
+                )}
+                <MobileNavLink to="/cart" icon={<ShoppingCart size={20} />} text="Cart" badge={cartCount} onClick={() => setMobileMenuOpen(false)} />
                     
                     {user?.role === 'admin' && (
                       <MobileNavLink to="/admin" icon={<LayoutDashboard size={20} />} text="Dashboard" onClick={() => setMobileMenuOpen(false)} />

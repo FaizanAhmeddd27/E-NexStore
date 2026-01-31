@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Package, BarChart3, Plus, List } from 'lucide-react'
+import { Package, BarChart3, Plus, List, Tag } from 'lucide-react'
 import CreateProduct from '../components/admin/CreateProduct'
 import ProductTable from '../components/admin/ProductTable'
 import AnalyticsDashboard from '../components/admin/AnalyticsDashboard'
+import CouponsManager from '../components/admin/CouponsManager'
 
 const AdminPage = () => {
   const [activeTab, setActiveTab] = useState('analytics')
@@ -12,6 +13,7 @@ const AdminPage = () => {
     { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={20} /> },
     { id: 'create', label: 'Create Product', icon: <Plus size={20} /> },
     { id: 'products', label: 'All Products', icon: <List size={20} /> },
+    { id: 'coupons', label: 'Coupons', icon: <Tag size={20} /> },
   ]
 
   return (
@@ -73,6 +75,7 @@ const AdminPage = () => {
         {activeTab === 'analytics' && <AnalyticsDashboard />}
         {activeTab === 'create' && <CreateProduct />}
         {activeTab === 'products' && <ProductTable />}
+        {activeTab === 'coupons' && <CouponsManager />}
       </motion.div>
     </motion.div>
   )

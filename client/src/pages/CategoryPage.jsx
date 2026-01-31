@@ -1,37 +1,45 @@
-import { useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { useDispatch, useSelector } from 'react-redux'
-import { motion } from 'framer-motion'
-import { getProductsByCategory } from '../redux/thunks/productThunks'
-import ProductList from '../components/products/ProductList'
-import { ChevronRight, Home } from 'lucide-react'
+import { useEffect, useMemo } from "react";
+import { useParams, Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { motion } from "framer-motion";
+import { ChevronRight, Home } from "lucide-react";
 
-const CategoryPage = () => {
-  const { category } = useParams()
-  const dispatch = useDispatch()
-  const { products, loading } = useSelector((state) => state.products)
+import { getProductsByCategory } from "../redux/thunks/productThunks";
+import ProductList from "../components/products/ProductList";
+
+
+const CATEGORY_META = {
+  jeans: { name: "Jeans", description: "Discover our premium denim jeans in various styles and fits." },
+  "t-shirts": { name: "T-Shirts", description: "Comfortable and stylish t-shirts for every occasion." },
+  shoes: { name: "Shoes", description: "Step up your style with our curated shoe collection." },
+  hoodies: { name: "Hoodies", description: "Cozy and trendy hoodies for everyday wear." },
+  jackets: { name: "Jackets", description: "Stay warm and fashionable with our jacket selection." },
+  shirts: { name: "Shirts", description: "Smart casual shirts for clean and classic looks." },
+  pants: { name: "Pants", description: "Everyday pants and chinos built for comfort and style." },
+  shorts: { name: "Shorts", description: "Lightweight shorts perfect for summer and casual outfits." },
+  accessories: { name: "Accessories", description: "Complete your look with belts, sunglasses, scarves, and more." },
+  bags: { name: "Bags", description: "Backpacks, crossbody bags, and essentials for daily carry." },
+  caps: { name: "Caps", description: "Caps and hats to upgrade your streetwear style." },
+  watches: { name: "Watches", description: "Minimal, sporty, and premium watches for every style." }
+};
+export default function CategoryPage() {
+  const { category } = useParams();
+  const normalizedCategory = category?.toLowerCase();
+
+  const dispatch = useDispatch();
+  const { products, loading } = useSelector((state) => state.products);
+
+  const meta = useMemo(
+    () => CATEGORY_META[normalizedCategory],
+    [normalizedCategory]
+  );
+
+  const isValidCategory = Boolean(meta);
 
   useEffect(() => {
-    dispatch(getProductsByCategory(category))
-  }, [dispatch, category])
-
-  const categoryNames = {
-    'jeans': 'Jeans',
-    't-shirts': 'T-Shirts',
-    'shoes': 'Shoes',
-    'jackets': 'Jackets',
-    'bags': 'Bags',
-    'accessories': 'Accessories'
-  }
-
-  const categoryDescriptions = {
-    'jeans': 'Discover our premium collection of denim jeans in various styles and fits',
-    't-shirts': 'Comfortable and stylish t-shirts for every occasion',
-    'shoes': 'Step up your style with our curated shoe collection',
-    'jackets': 'Stay warm and fashionable with our jacket selection',
-    'bags': 'Carry your essentials in style with our bags',
-    'accessories': 'Complete your look with our accessories'
-  }
+    if (!isValidCategory) return;
+    dispatch(getProductsByCategory(normalizedCategory));
+  }, [dispatch, normalizedCategory, isValidCategory]);
 
   return (
     <motion.div
@@ -51,7 +59,9 @@ const CategoryPage = () => {
           Home
         </Link>
         <ChevronRight size={16} />
-        <span className="text-gray-900 font-medium">{categoryNames[category]}</span>
+        <span className="text-gray-900 font-medium">
+          {isValidCategory ? meta.name : "Products"}
+        </span>
       </motion.nav>
 
       {/* Page Header */}
@@ -61,25 +71,40 @@ const CategoryPage = () => {
         className="mb-12"
       >
         <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-          {categoryNames[category] || 'Products'}
+          {isValidCategory ? meta.name : "Products"}
         </h1>
+
         <p className="text-xl text-gray-600 max-w-3xl">
-          {categoryDescriptions[category]}
+          {isValidCategory
+            ? meta.description
+            : "Invalid category. Please choose a category from the home page."}
         </p>
 
-        {/* Stats */}
-        <div className="flex items-center gap-6 mt-6">
-          <div className="flex items-center gap-2">
-            <span className="text-3xl font-bold text-primary-600">{products.length}</span>
-            <span className="text-gray-600">Products</span>
+        {/* Stats (only show if valid category) */}
+        {isValidCategory && (
+          <div className="flex items-center gap-6 mt-6">
+            <div className="flex items-center gap-2">
+              <span className="text-3xl font-bold text-primary-600">
+                {products?.length || 0}
+              </span>
+              <span className="text-gray-600">Products</span>
+            </div>
           </div>
-        </div>
+        )}
       </motion.div>
 
       {/* Products Grid */}
-      <ProductList products={products} loading={loading} />
+      {isValidCategory ? (
+        <ProductList products={products || []} loading={loading} />
+      ) : (
+        <div className="card text-center">
+          <p className="text-gray-700 font-semibold mb-2">Category not found</p>
+          <p className="text-gray-600 mb-4">Go back and select a valid category.</p>
+          <Link to="/" className="btn-primary inline-flex">
+            Back to Home
+          </Link>
+        </div>
+      )}
     </motion.div>
-  )
+  );
 }
-
-export default CategoryPage

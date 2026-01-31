@@ -21,7 +21,8 @@ import PaymentFailedPage from './pages/PaymentFailedPage'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import AdminPage from './pages/AdminPage'
-
+import OrdersPage from './pages/OrdersPage'
+import OrderDetailsPage from './pages/OrderDetailsPage'
 function App() {
   const dispatch = useDispatch()
   const location = useLocation()
@@ -67,6 +68,16 @@ function App() {
             <Route path="/checkout" element={
               <ProtectedRoute>
                 <CheckoutPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/orders" element={
+              <ProtectedRoute>
+                <OrdersPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/orders/:orderId" element={
+              <ProtectedRoute>
+                <OrderDetailsPage />
               </ProtectedRoute>
             } />
             <Route path="/payment-success" element={<PaymentSuccessPage />} />

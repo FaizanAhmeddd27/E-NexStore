@@ -10,11 +10,9 @@ export const redis = new Redis({
 // Featured Products Cache
 export const setFeaturedProducts = async (products) => {
   try {
-    console.log('Redis: setting featured_products cache, items:', Array.isArray(products) ? products.length : 0);
     const result = await redis.set('featured_products', JSON.stringify(products), {
       ex: 3600 // 1 hour expiration
     });
-    console.log('Redis set result:', result);
     return true;
   } catch (error) {
     console.error('Redis set error:', error);
@@ -25,7 +23,6 @@ export const setFeaturedProducts = async (products) => {
 export const getFeaturedProducts = async () => {
   try {
     const products = await redis.get('featured_products');
-    console.log('Redis: get featured_products raw:', products ? '[present]' : '[missing]');
     return products ? JSON.parse(products) : null;
   } catch (error) {
     console.error('Redis get error:', error);
@@ -36,7 +33,6 @@ export const getFeaturedProducts = async () => {
 export const deleteFeaturedProducts = async () => {
   try {
     const result = await redis.del('featured_products');
-    console.log('Redis: deleted featured_products, result:', result);
     return result;
   } catch (error) {
     console.error('Redis delete error:', error);
@@ -48,7 +44,6 @@ export const deleteFeaturedProducts = async () => {
 export const updateFeaturedProductsCache = async (Product) => {
   try {
     const featuredProducts = await Product.find({ isFeatured: true }).lean();
-    console.log('Updating featured products cache, found:', featuredProducts.length);
     const ok = await setFeaturedProducts(featuredProducts);
     if (!ok) console.warn('Failed to set featured products cache');
     return ok;

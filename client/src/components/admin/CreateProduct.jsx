@@ -208,6 +208,13 @@ const CreateProduct = () => {
             <option value="jackets">Jackets</option>
             <option value="bags">Bags</option>
             <option value="accessories">Accessories</option>
+            <option value="hoodies">Hoodies</option>
+            <option value="shirts">Shirts</option>
+            <option value="pants">Pants</option>
+            <option value="shorts">Shorts</option>
+            <option value="caps">Caps</option>
+            <option value="watches">Watches</option>
+            
           </select>
         </div>
 

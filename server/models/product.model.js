@@ -29,7 +29,20 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Product category is required'],
     enum: {
-      values: ['jeans', 't-shirts', 'shoes', 'jackets', 'bags', 'accessories'],
+      values: [
+        'jeans',
+        't-shirts',
+        'shoes',
+        'jackets',
+        'bags',
+        'accessories',
+        'hoodies',
+        'shirts',
+        'pants',
+        'shorts',
+        'caps',
+        'watches'
+      ],
       message: '{VALUE} is not a valid category'
     }
   },
@@ -51,7 +64,6 @@ const productSchema = new mongoose.Schema({
   timestamps: true 
 });
 
-// Index for better query performance
 productSchema.index({ category: 1, isFeatured: 1 });
 productSchema.index({ name: 'text', description: 'text' });
 
