@@ -1,8 +1,26 @@
 import axios from 'axios';
 
 // Ensure the API base URL always points to the server's /api namespace
-const raw = import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
-const API_BASE = raw.replace(/\/$/, '') + (raw.endsWith('/api') ? '' : '/api');
+// Prefer a runtime-detected origin when deployed (avoid using a dev localhost baked into the build)
+const envUrl = import.meta.env.VITE_API_URL;
+let raw;
+if (typeof window !== 'undefined') {
+  // If the build-time env points to localhost but the site is running remotely,
+  // prefer the page origin (this avoids the browser trying to reach the developer's localhost).
+  const envIsLocalhost = typeof envUrl === 'string' && /(^https?:\/\/)?(localhost|127\.0\.0\.1)/i.test(envUrl);
+  const siteIsLocalhost = /(^localhost$|^127\.0\.0\.1$)/.test(window.location.hostname);
+
+  raw = envUrl ?? window.location.origin;
+  if (envIsLocalhost && !siteIsLocalhost) {
+    console.warn('[axios] VITE_API_URL points to localhost but site is remote — switching to window.location.origin');
+    raw = window.location.origin;
+  }
+} else {
+  // Server-side / build-time fallback
+  raw = envUrl ?? 'http://localhost:5000';
+}
+
+const API_BASE = String(raw).replace(/\/$/, '') + (String(raw).endsWith('/api') ? '' : '/api');
 
 const axiosInstance = axios.create({
   baseURL: API_BASE,
