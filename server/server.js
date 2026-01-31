@@ -21,32 +21,37 @@ const PORT = process.env.PORT || 5000;
 const __dirname = path.resolve();
 
 
+app.set("trust proxy", 1);
+
 const allowedOrigins = [
   "https://nex-store-ecommerce.vercel.app",
   "https://e-nex-store-j8ko-faizan-ahmeds-projects-7041d948.vercel.app",
 ];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // allow Postman / server-to-server
-      if (!origin) return callback(null, true);
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
 
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      } else {
-        console.error("Blocked by CORS:", origin);
-        return callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
+  if (allowedOrigins.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+  }
 
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+  );
 
-app.options("*", cors());
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+
+  next();
+});
+
 
 
 // Stripe webhook MUST be before body parser
