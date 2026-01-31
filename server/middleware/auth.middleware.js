@@ -4,7 +4,8 @@ import User from '../models/user.model.js';
 
 export const protectRoute = async (req, res, next) => {
   try {
-    const token = req.cookies.token;
+    // Support token from cookie OR Authorization header (Bearer token)
+    const token = req.cookies?.token || (req.headers.authorization && req.headers.authorization.split(' ')[1]);
 
     if (!token) {
       return res.status(401).json({ 

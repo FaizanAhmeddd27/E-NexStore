@@ -12,6 +12,12 @@ const axiosInstance = axios.create({
   }
 });
 
+// If a token was persisted (for browsers that block third-party cookies), attach it to requests
+const savedToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+if (savedToken) {
+  axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
+}
+
 axiosInstance.interceptors.request.use(
   (config) => {
     // Debug: log base and URL

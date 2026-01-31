@@ -9,6 +9,13 @@ export const signup = createAsyncThunk(
     try {
       const { data } = await axios.post('/auth/signup', userData);
       toast.success(data.message);
+
+      // Persist token client-side for environments that block third-party cookies (mobile Safari, etc.)
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+      }
+
       return data;
     } catch (error) {
       const message = error.response?.data?.message || 'Signup failed';
@@ -24,6 +31,12 @@ export const login = createAsyncThunk(
     try {
       const { data } = await axios.post('/auth/login', credentials);
       toast.success(data.message);
+
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+      }
+
       return data;
     } catch (error) {
       const message = error.response?.data?.message || 'Login failed';
@@ -39,6 +52,11 @@ export const logout = createAsyncThunk(
     try {
       const { data } = await axios.post('/auth/logout');
       toast.success(data.message);
+
+      // Clear stored token and Authorization header
+      localStorage.removeItem('token');
+      delete axios.defaults.headers.common['Authorization'];
+
       return data;
     } catch (error) {
       const message = error.response?.data?.message || 'Logout failed';

@@ -55,6 +55,7 @@ export const signup = async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'User created successfully',
+      token,
       user: {
         _id: user._id,
         name: user.name,
@@ -89,6 +90,7 @@ export const login = async (req, res) => {
     res.json({
       success: true,
       message: 'Logged in successfully',
+      token,
       user: {
         _id: user._id,
         name: user.name,
@@ -139,7 +141,7 @@ export const refreshToken = async (req, res) => {
     const token = generateToken(req.user._id);
     setCookie(res, token);
 
-    res.json({ success: true, message: 'Token refreshed successfully' });
+    res.json({ success: true, message: 'Token refreshed successfully', token });
   } catch (error) {
     console.error('Refresh token error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
