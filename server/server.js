@@ -24,9 +24,11 @@ app.set("trust proxy", 1);
 
 const ALLOWED_ORIGINS = [
   "https://e-nex-store-j8ko-faizan-ahmeds-projects-7041d948.vercel.app",
+  "https://e-nex-store-j8ko-git-main-faizan-ahmeds-projects-7041d948.vercel.app",
   "https://nex-store-ecommerce.vercel.app",
-    "https://nex-store-mart.vercel.app",
+  "https://nex-store-mart.vercel.app",
 ];
+
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
