@@ -19,7 +19,7 @@ const Footer = () => {
               <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center">
                 <ShoppingCart className="text-white" size={24} />
               </div>
-              <span className="text-2xl font-bold text-white">ShopHub</span>
+              <span className="text-2xl font-bold text-white">NexStore</span>
             </Link>
             <p className="text-sm text-gray-400 mb-4">
               Your one-stop destination for quality products at amazing prices. Shop with confidence and style.
@@ -96,7 +96,7 @@ const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-center space-x-3">
                 <Mail size={18} className="text-primary-400 flex-shrink-0" />
-                <span className="text-sm">support@shophub.com</span>
+                <span className="text-sm">support@nexstore.com</span>
               </li>
               <li className="flex items-center space-x-3">
                 <Phone size={18} className="text-primary-400 flex-shrink-0" />
@@ -118,7 +118,7 @@ const Footer = () => {
           className="border-t border-gray-800 mt-8 pt-8 text-center"
         >
           <p className="text-sm text-gray-400">
-            © {currentYear} ShopHub. All rights reserved. Made with ❤️ by Your Team
+            © {currentYear} NexStore. All rights reserved
           </p>
         </motion.div>
       </div>
