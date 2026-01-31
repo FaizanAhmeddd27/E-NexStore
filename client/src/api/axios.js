@@ -14,6 +14,19 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use(
   (config) => {
+    // Debug: log base and URL
+    console.log('[axios] baseURL:', axiosInstance.defaults.baseURL, 'request url:', config.url);
+
+    // If request URL is relative and neither baseURL nor url already include /api, add it
+    const isRelative = typeof config.url === 'string' && config.url.startsWith('/');
+    const baseHasApi = String(axiosInstance.defaults.baseURL || '').endsWith('/api');
+    const urlHasApi = typeof config.url === 'string' && config.url.startsWith('/api');
+
+    if (isRelative && !baseHasApi && !urlHasApi) {
+      config.url = '/api' + config.url;
+      console.log('[axios] normalized request url to:', config.url);
+    }
+
     return config;
   },
   (error) => {
