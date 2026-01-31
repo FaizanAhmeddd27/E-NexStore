@@ -22,25 +22,21 @@ const PORT = process.env.PORT || 5000;
 const __dirname = path.resolve();
 
 // CORS configuration
-const allowedOrigins = [
-  process.env.CLIENT_URL,
-  "http://localhost:5173",
-];
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    origin: [
+      "https://nex-store-ecommerce.vercel.app",
+      "https://e-nex-store-j8ko-faizan-ahmeds-projects-7041d948.vercel.app"
+    ],
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+// VERY IMPORTANT
+app.options("*", cors());
 
 // Webhook route BEFORE express.json()
 app.use('/api/payment/webhook', paymentRoutes);
