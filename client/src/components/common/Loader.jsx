@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { ShoppingCart } from 'lucide-react'
 
-const Loader = () => {
+const Loader = ({ message = 'Loading...', showRetry = false, onRetry }) => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="text-center">
@@ -31,7 +31,12 @@ const Loader = () => {
             ease: "easeInOut"
           }}
         >
-          <p className="text-gray-600 font-medium text-lg">Loading...</p>
+          <p className="text-gray-600 font-medium text-lg">{message}</p>
+          {showRetry && (
+            <div className="mt-4">
+              <button onClick={onRetry} className="btn-primary">Retry</button>
+            </div>
+          )}
         </motion.div>
       </div>
     </div>

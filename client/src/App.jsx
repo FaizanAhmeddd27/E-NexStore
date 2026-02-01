@@ -37,10 +37,9 @@ function App() {
   useEffect(() => {
     import('./api/axios').then(({ default: axiosInstance }) => {
       console.log('axios baseURL (runtime):', axiosInstance.defaults.baseURL);
-      axiosInstance.get('/health')
-        .then((res) => console.log('health response:', res.data))
-        .catch((err) => console.error('health fetch failed:', err));
-    }).catch((err) => console.error('Failed to load axios for health check:', err));
+      // fire-and-forget health check to wake slow hosts (e.g. Render free-tier)
+      axiosInstance.get('/health').then((res) => console.log('health response:', res.data)).catch(() => {});
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -49,8 +48,30 @@ function App() {
     }
   }, [dispatch, isAuthenticated])
 
+  // Local UI fallback: if `getProfile` keeps loading for too long (backend sleeping), show friendly message + retry
+  const [loaderStuck, setLoaderStuck] = useState(false);
+  useEffect(() => {
+    let timer;
+    if (loading) {
+      setLoaderStuck(false);
+      timer = setTimeout(() => setLoaderStuck(true), 12000); // 12 seconds
+    } else {
+      setLoaderStuck(false);
+    }
+    return () => clearTimeout(timer);
+  }, [loading]);
+
+  const handleRetry = () => {
+    dispatch(getProfile());
+    import('./api/axios').then(({ default: axiosInstance }) => {
+      axiosInstance.get('/health').catch(() => {});
+    }).catch(() => {});
+  }
+
   if (loading) {
-    return <Loader />
+    // before timeout just show normal loader, after timeout show wake/retry UI
+    if (!loaderStuck) return <Loader message="Loading..." />
+    return <Loader message="Server waking up — please wait..." showRetry onRetry={handleRetry} />
   }
 
   return (

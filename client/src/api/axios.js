@@ -27,7 +27,9 @@ const axiosInstance = axios.create({
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
-  }
+  },
+  // Safety: don't let requests hang forever — backend (Render free tier) may sleep and take long to wake
+  timeout: 10000, // 10 seconds
 });
 
 // If a token was persisted (for browsers that block third-party cookies), attach it to requests
@@ -59,10 +61,15 @@ axiosInstance.interceptors.request.use(
 );
 
 axiosInstance.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
+    // Detect common timeout signal from XHR/fetch adapter
+    if (error?.code === 'ECONNABORTED' || (error?.message && error.message.includes('timeout'))) {
+      console.warn('[axios] request timed out:', error.config?.url);
+      // mark the error for callers so UI can show a friendly retry/fallback
+      error.isTimeout = true;
+    }
+
     if (error.response?.status === 401) {
       console.warn('API 401 Unauthorized:', error.config?.url);
     }
