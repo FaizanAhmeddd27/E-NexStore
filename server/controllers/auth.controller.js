@@ -8,15 +8,15 @@ const generateToken = (userId) => {
 };
 
 const setCookie = (res, token) => {
-  res.cookie('token', token, {
+  const isProd = process.env.NODE_ENV === "production";
+
+  res.cookie("token", token, {
     httpOnly: true,
-    secure: true,
-    sameSite: 'none',
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    secure: isProd,              // ✅ only https in prod
+    sameSite: isProd ? "none" : "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 };
-
-// ----------------- SIGNUP -----------------
 export const signup = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -29,7 +29,6 @@ export const signup = async (req, res) => {
     if (userExists)
       return res.status(400).json({ success: false, message: 'User already exists' });
 
-    // Handle avatar upload if provided
     let avatar = {};
     if (req.file) {
       const result = await cloudinary.uploader.upload_stream(
@@ -70,7 +69,6 @@ export const signup = async (req, res) => {
   }
 };
 
-// ----------------- LOGIN -----------------
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -105,18 +103,19 @@ export const login = async (req, res) => {
   }
 };
 
-// ----------------- LOGOUT -----------------
 export const logout = async (req, res) => {
-  try {
-    res.clearCookie('token');
-    res.json({ success: true, message: 'Logged out successfully' });
-  } catch (error) {
-    console.error('Logout error:', error);
-    res.status(500).json({ success: false, message: 'Server error during logout' });
-  }
+  const isProd = process.env.NODE_ENV === "production";
+
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+  });
+
+  res.json({ success: true, message: "Logged out successfully" });
 };
 
-// ----------------- GET PROFILE -----------------
+
 export const getProfile = async (req, res) => {
   try {
     res.json({
@@ -135,7 +134,6 @@ export const getProfile = async (req, res) => {
   }
 };
 
-// ----------------- REFRESH TOKEN -----------------
 export const refreshToken = async (req, res) => {
   try {
     const token = generateToken(req.user._id);

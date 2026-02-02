@@ -13,19 +13,35 @@ import paymentRoutes from "./routes/payment.route.js";
 import analyticsRoutes from "./routes/analytics.route.js";
 import adminRoutes from "./routes/admin.route.js";
 
+
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// MongoDB connection
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server running on ${PORT}`);
+  });
+}).catch(err => {
+  console.error("DB connection failed", err);
+  process.exit(1);
+});
 
 
 app.set("trust proxy", 1);
 
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  process.env.CLIENT_URL_PROD,
+];
+
 app.use((req, res, next) => {
   const origin = req.headers.origin;
 
-  if (origin && (origin.endsWith(".vercel.app") || origin === "https://nex-store-mart.vercel.app")) {
+  if (allowedOrigins.includes(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
   }
 
@@ -45,8 +61,6 @@ app.use((req, res, next) => {
 
   next();
 });
-
-
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
@@ -82,13 +96,4 @@ app.use((err, req, res, next) => {
 
 
 
-connectDB()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`Server running on ${PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.error("DB connection failed", err);
-    process.exit(1);
-  });
+
